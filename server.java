@@ -1,4 +1,6 @@
 import java.io.*;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -168,13 +170,16 @@ public class server {
             case "tcp":
                 return new tcp_transport(socket);
             case "snw":
-                return new snw_transport(socket);
+                DatagramSocket udpSocket = new DatagramSocket(port);
+                InetAddress clientAddress = InetAddress.getByName(socket.getInetAddress().getHostAddress());
+                return new snw_transport(clientAddress, socket.getPort(), udpSocket);
             default:
                 System.err.println("Unknown protocol: " + protocol);
                 socket.close();
                 throw new IllegalArgumentException("Unknown protocol: " + protocol);
         }
     }
+
 
     public static void main(String[] args) {
         try {

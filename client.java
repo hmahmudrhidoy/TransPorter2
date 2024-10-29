@@ -1,8 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,9 +19,22 @@ public class client {
         this.serverPort = serverPort;
         this.protocol = protocol.toLowerCase();
 
-        Socket socket = initializeSocket();
-        this.transport = initializeTransport(socket);
+        this.transport = initializeTransport();
         System.out.println("Client started using protocol: " + protocol.toUpperCase());
+    }
+
+    private Transport initializeTransport() throws IOException {
+        switch (protocol) {
+            case "tcp":
+                Socket tcpSocket = initializeSocket();
+                return new tcp_transport(tcpSocket);
+            case "snw":
+                DatagramSocket udpSocket = new DatagramSocket(clientPort);
+                InetAddress serverInetAddress = InetAddress.getByName(serverAddress);
+                return new snw_transport(serverInetAddress, serverPort, udpSocket);
+            default:
+                throw new IllegalArgumentException("Unknown protocol: " + protocol);
+        }
     }
 
     private Socket initializeSocket() throws IOException {
@@ -32,19 +44,6 @@ public class client {
         }
         socket.connect(new InetSocketAddress(serverAddress, serverPort));
         return socket;
-    }
-
-    private Transport initializeTransport(Socket socket) throws IOException {
-        switch (protocol) {
-            case "tcp":
-                return new tcp_transport(socket);
-            case "snw":
-                return new snw_transport(socket);
-            default:
-                System.err.println("Unknown protocol: " + protocol);
-                socket.close();
-                throw new IllegalArgumentException("Unknown protocol: " + protocol);
-        }
     }
 
     public void start() {
